@@ -64,3 +64,11 @@ Build and start the containers
 ```bash
 sudo docker-compose up --build
 ````
+
+### POSTMAN COLLECTION
+
+Please find the Postman collection about the listed features.
+
+```
+./postman_collection/Social Network.postman_collection.json
+```
