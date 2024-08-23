@@ -2,18 +2,21 @@ from django.contrib.auth import authenticate
 from rest_framework import serializers
 from .models import User
 
+
 class SignupSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ['email', 'password']
+        fields = ['email', 'password', 'name']
 
     def create(self, validated_data):
         user = User(
             email=validated_data['email'].lower(),
+            name=validated_data.get('name', '').lower()
         )
         user.set_password(validated_data['password'])
         user.save()
         return user
+
 
 class LoginSerializer(serializers.Serializer):
     email = serializers.EmailField()
@@ -29,3 +32,9 @@ class LoginSerializer(serializers.Serializer):
             raise serializers.ValidationError("Invalid credentials.")
 
         return user
+
+
+class UserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['id', 'email', 'name']
