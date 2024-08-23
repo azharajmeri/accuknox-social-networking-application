@@ -3,23 +3,14 @@ from django.contrib.auth import get_user_model
 from rest_framework import generics, status
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import AllowAny, IsAuthenticated
-from rest_framework_simplejwt.tokens import RefreshToken
 
 from .serializers import SignupSerializer, LoginSerializer, UserSerializer, FriendRequestSerializer, \
     PendingFriendRequestSerializer
 from .throttles import FriendRequestThrottle
-from .utils import custom_response
+from .utils import custom_response, get_tokens_for_user
 from .models import FriendRequest
 
 User = get_user_model()
-
-
-def get_tokens_for_user(user):
-    refresh = RefreshToken.for_user(user)
-    return {
-        'refresh': str(refresh),
-        'access': str(refresh.access_token),
-    }
 
 
 class SignupView(generics.CreateAPIView):
@@ -52,8 +43,7 @@ class LoginView(generics.GenericAPIView):
     def post(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         if serializer.is_valid():
-            user = serializer.validated_data
-            if user:
+            if user := serializer.validated_data:
                 tokens = get_tokens_for_user(user)
                 return custom_response(
                     data={"tokens": tokens},
@@ -89,25 +79,19 @@ class UserSearchView(generics.ListAPIView):
         if query is None:
             return User.objects.none()
 
-        # Search by exact email match
+        # First search email match
         if User.objects.filter(email__iexact=query).exists():
             return User.objects.filter(email__iexact=query)
 
-        # Search by name (case-insensitive)
+        # After search by name
         return User.objects.filter(name__icontains=query)
 
     def list(self, request, *args, **kwargs):
-        queryset = self.get_queryset()
-        page = self.paginate_queryset(queryset)
-        if page is not None:
-            serializer = self.get_serializer(page, many=True)
-            return self.get_paginated_response(serializer.data)
-
-        serializer = self.get_serializer(queryset, many=True)
+        response = super().list(request, *args, **kwargs)
         return custom_response(
-            data=serializer.data,
+            data=response.data,
             message="User search results.",
-            status=status.HTTP_200_OK
+            status=response.status_code
         )
 
 
