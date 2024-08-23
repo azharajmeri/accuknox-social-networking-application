@@ -1,6 +1,9 @@
+from datetime import timedelta
+
 from django.conf import settings
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager
 from django.db import models
+from django.utils import timezone
 
 
 class UserManager(BaseUserManager):
@@ -48,3 +51,9 @@ class FriendRequest(models.Model):
 
     def __str__(self):
         return f"{self.sender} -> {self.receiver} ({self.status})"
+
+    @classmethod
+    def can_send_request(cls, user):
+        one_minute_ago = timezone.now() - timedelta(minutes=1)
+        recent_requests = cls.objects.filter(sender=user, created_at__gte=one_minute_ago)
+        return recent_requests.count() < 3

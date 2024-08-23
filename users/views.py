@@ -116,6 +116,14 @@ class SendFriendRequestView(generics.CreateAPIView):
     permission_classes = [IsAuthenticated]
 
     def create(self, request, *args, **kwargs):
+        if not FriendRequest.can_send_request(request.user):
+            return custom_response(
+                data=None,
+                message="Friend request limit exceeded.",
+                status=status.HTTP_429_TOO_MANY_REQUESTS,
+                errors={"message": "You cannot send more than 3 friend requests within a minute."}
+            )
+
         data = {
             'sender': request.user.id,
             'receiver': request.data.get('receiver')
