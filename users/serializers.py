@@ -51,3 +51,11 @@ class FriendRequestSerializer(serializers.ModelSerializer):
         if FriendRequest.objects.filter(sender=data['sender'], receiver=data['receiver']).exists():
             raise serializers.ValidationError("A friend request has already been sent.")
         return data
+
+
+class PendingFriendRequestSerializer(serializers.ModelSerializer):
+    sender = serializers.SlugRelatedField(slug_field='email', queryset=User.objects.all())
+
+    class Meta:
+        model = FriendRequest
+        fields = ['id', 'sender', 'created_at']

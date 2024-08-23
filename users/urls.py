@@ -1,6 +1,6 @@
 from django.urls import path
 from .views import SignupView, LoginView, UserSearchView, SendFriendRequestView, RespondFriendRequestView, \
-    FriendsListView
+    FriendsListView, PendingFriendRequestsView
 
 urlpatterns = [
     path('signup/', SignupView.as_view(), name='signup'),
@@ -9,4 +9,5 @@ urlpatterns = [
     path('friend-request/', SendFriendRequestView.as_view(), name='send-friend-request'),
     path('friend-request/<int:pk>/', RespondFriendRequestView.as_view(), name='respond-friend-request'),
     path('friends/', FriendsListView.as_view(), name='friends-list'),
+    path('friend-requests/pending/', PendingFriendRequestsView.as_view(), name='pending-friend-requests'),
 ]

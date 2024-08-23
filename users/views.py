@@ -5,7 +5,8 @@ from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework_simplejwt.tokens import RefreshToken
 
-from .serializers import SignupSerializer, LoginSerializer, UserSerializer, FriendRequestSerializer
+from .serializers import SignupSerializer, LoginSerializer, UserSerializer, FriendRequestSerializer, \
+    PendingFriendRequestSerializer
 from .utils import custom_response
 from .models import FriendRequest
 
@@ -180,11 +181,11 @@ class FriendsListView(generics.ListAPIView):
 
         # Find users who sent a friend request to the current user and it was accepted
         received_friend_request = FriendRequest.objects.filter(receiver=user, status='accepted').values_list('sender',
-                                                                                                           flat=True)
+                                                                                                             flat=True)
 
         # Find users who received a friend request from the current user and it was accepted
         sent_friend_request = FriendRequest.objects.filter(sender=user, status='accepted').values_list('receiver',
-                                                                                                     flat=True)
+                                                                                                       flat=True)
 
         # Combine both sets of friends
         friends_ids = list(received_friend_request) + list(sent_friend_request)
@@ -197,5 +198,23 @@ class FriendsListView(generics.ListAPIView):
         return custom_response(
             data=serializer.data,
             message="List of friends retrieved successfully.",
+            status=status.HTTP_200_OK
+        )
+
+
+class PendingFriendRequestsView(generics.ListAPIView):
+    serializer_class = PendingFriendRequestSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        user = self.request.user
+        return FriendRequest.objects.filter(receiver=user, status='sent')
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        serializer = self.get_serializer(queryset, many=True)
+        return custom_response(
+            data=serializer.data,
+            message="List of pending friend requests retrieved successfully.",
             status=status.HTTP_200_OK
         )
