@@ -1,11 +1,13 @@
 from django.contrib.auth import get_user_model
+
 from rest_framework import generics, status
 from rest_framework.pagination import PageNumberPagination
-
-from .serializers import SignupSerializer, LoginSerializer, UserSerializer
 from rest_framework.permissions import AllowAny, IsAuthenticated
-from .utils import custom_response
 from rest_framework_simplejwt.tokens import RefreshToken
+
+from .serializers import SignupSerializer, LoginSerializer, UserSerializer, FriendRequestSerializer
+from .utils import custom_response
+from .models import FriendRequest
 
 User = get_user_model()
 
@@ -103,5 +105,67 @@ class UserSearchView(generics.ListAPIView):
         return custom_response(
             data=serializer.data,
             message="User search results.",
+            status=status.HTTP_200_OK
+        )
+
+
+class SendFriendRequestView(generics.CreateAPIView):
+    queryset = FriendRequest.objects.all()
+    serializer_class = FriendRequestSerializer
+    permission_classes = [IsAuthenticated]
+
+    def create(self, request, *args, **kwargs):
+        data = {
+            'sender': request.user.id,
+            'receiver': request.data.get('receiver')
+        }
+        serializer = self.get_serializer(data=data)
+        if serializer.is_valid():
+            serializer.save()
+            return custom_response(
+                data=serializer.data,
+                message="Friend request sent successfully.",
+                status=status.HTTP_201_CREATED
+            )
+        return custom_response(
+            data=None,
+            message="Friend request failed.",
+            status=status.HTTP_400_BAD_REQUEST,
+            errors={"message": serializer.errors}
+        )
+
+
+class RespondFriendRequestView(generics.UpdateAPIView):
+    queryset = FriendRequest.objects.all()
+    serializer_class = FriendRequestSerializer
+    permission_classes = [IsAuthenticated]
+
+    def update(self, request, *args, **kwargs):
+        friend_request = self.get_object()
+        if friend_request.receiver != request.user:
+            return custom_response(
+                data=None,
+                message="Unauthorized action.",
+                status=status.HTTP_403_FORBIDDEN,
+                errors={"message": "You are not allowed to respond to this friend request."}
+            )
+
+        action = request.data.get('action')
+        if action == 'accept':
+            friend_request.status = 'accepted'
+        elif action == 'reject':
+            friend_request.status = 'rejected'
+        else:
+            return custom_response(
+                data=None,
+                message="Invalid action.",
+                status=status.HTTP_400_BAD_REQUEST,
+                errors={"message": "Action must be 'accept' or 'reject'."}
+            )
+        friend_request.save()
+
+        return custom_response(
+            data={"status": friend_request.status},
+            message=f"Friend request {friend_request.status} successfully.",
             status=status.HTTP_200_OK
         )

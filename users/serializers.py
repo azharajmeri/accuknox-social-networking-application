@@ -1,6 +1,6 @@
 from django.contrib.auth import authenticate
 from rest_framework import serializers
-from .models import User
+from .models import User, FriendRequest
 
 
 class SignupSerializer(serializers.ModelSerializer):
@@ -38,3 +38,16 @@ class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ['id', 'email', 'name']
+
+
+class FriendRequestSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = FriendRequest
+        fields = ['id', 'sender', 'receiver', 'status', 'created_at']
+
+    def validate(self, data):
+        if data['sender'] == data['receiver']:
+            raise serializers.ValidationError("You cannot send a friend request to yourself.")
+        if FriendRequest.objects.filter(sender=data['sender'], receiver=data['receiver']).exists():
+            raise serializers.ValidationError("A friend request has already been sent.")
+        return data
