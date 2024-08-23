@@ -169,3 +169,33 @@ class RespondFriendRequestView(generics.UpdateAPIView):
             message=f"Friend request {friend_request.status} successfully.",
             status=status.HTTP_200_OK
         )
+
+
+class FriendsListView(generics.ListAPIView):
+    serializer_class = UserSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        user = self.request.user
+
+        # Find users who sent a friend request to the current user and it was accepted
+        received_friend_request = FriendRequest.objects.filter(receiver=user, status='accepted').values_list('sender',
+                                                                                                           flat=True)
+
+        # Find users who received a friend request from the current user and it was accepted
+        sent_friend_request = FriendRequest.objects.filter(sender=user, status='accepted').values_list('receiver',
+                                                                                                     flat=True)
+
+        # Combine both sets of friends
+        friends_ids = list(received_friend_request) + list(sent_friend_request)
+
+        return User.objects.filter(id__in=friends_ids)
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        serializer = self.get_serializer(queryset, many=True)
+        return custom_response(
+            data=serializer.data,
+            message="List of friends retrieved successfully.",
+            status=status.HTTP_200_OK
+        )
