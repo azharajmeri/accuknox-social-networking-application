@@ -43,17 +43,24 @@ functionalities for user authentication, managing friend requests, and retrievin
    ```bash
    pip install -r requirements.txt
    ```
-   
+
 4. **Run Migrations**
 
    ```bash
    python manage.py makemigrations
    python manage.py migrate
    ```
-   
+
 5. **Run the Development Server**
 
    ```bash
    python manage.py runserver
    ```
-   
+
+### Build and start Docker containers
+
+Build and start the containers
+
+```bash
+sudo docker-compose up --build
+````
