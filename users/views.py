@@ -7,6 +7,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 
 from .serializers import SignupSerializer, LoginSerializer, UserSerializer, FriendRequestSerializer, \
     PendingFriendRequestSerializer
+from .throttles import FriendRequestThrottle
 from .utils import custom_response
 from .models import FriendRequest
 
@@ -114,16 +115,9 @@ class SendFriendRequestView(generics.CreateAPIView):
     queryset = FriendRequest.objects.all()
     serializer_class = FriendRequestSerializer
     permission_classes = [IsAuthenticated]
+    throttle_classes = [FriendRequestThrottle]
 
     def create(self, request, *args, **kwargs):
-        if not FriendRequest.can_send_request(request.user):
-            return custom_response(
-                data=None,
-                message="Friend request limit exceeded.",
-                status=status.HTTP_429_TOO_MANY_REQUESTS,
-                errors={"message": "You cannot send more than 3 friend requests within a minute."}
-            )
-
         data = {
             'sender': request.user.id,
             'receiver': request.data.get('receiver')

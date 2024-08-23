@@ -84,6 +84,12 @@ REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ),
+    'DEFAULT_THROTTLE_CLASSES': [
+        'users.throttles.FriendRequestThrottle',
+    ],
+    'DEFAULT_THROTTLE_RATES': {
+        'friend_request': '3/minute',  # 3 requests per minute
+    },
 }
 
 from datetime import timedelta
